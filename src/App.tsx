@@ -11,6 +11,7 @@ function App() {
   const [fitToken, setFitToken] = useState(0);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const exportApiRef = useRef<{ renderFull: () => void } | null>(null);
 
   const loadFile = useCallback((file: File) => {
     const url = URL.createObjectURL(file);
@@ -80,6 +81,7 @@ function App() {
         }}
         canvasEl={canvasRef.current}
         hasImage={!!imageEl}
+        onBeforeExport={() => exportApiRef.current?.renderFull()}
       />
       <div className="app-body">
         <main className="canvas-area">
@@ -90,6 +92,7 @@ function App() {
             onZoomChange={setZoom}
             fitToken={fitToken}
             canvasRef={canvasRef}
+            registerExportApi={(api) => (exportApiRef.current = api)}
           />
         </main>
         <aside className="sidebar">

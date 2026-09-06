@@ -49,3 +49,35 @@ export function imageToImageData(img: HTMLImageElement): ImageData {
   ctx.drawImage(img, 0, 0);
   return ctx.getImageData(0, 0, canvas.width, canvas.height);
 }
+
+/**
+ * A cheap, downscaled copy of the source image, used only as an interim
+ * preview while a control is actively being dragged. Preprocessing and
+ * algorithm cost scale with pixel count, so running the same pipeline on
+ * (say) a quarter-resolution copy is roughly four times cheaper -- enough
+ * to keep sliders responsive on large images. `scale` tells the caller how
+ * much smaller this copy is than the real source, so grid/cell sizing can
+ * be scaled down to match before running the pipeline on it.
+ */
+export function imageToPreviewImageData(
+  img: HTMLImageElement,
+  maxDim: number,
+): { imageData: ImageData; scale: number } {
+  const fullW = img.naturalWidth;
+  const fullH = img.naturalHeight;
+  const scale = Math.min(1, maxDim / Math.max(fullW, fullH));
+  const width = Math.max(1, Math.round(fullW * scale));
+  const height = Math.max(1, Math.round(fullH * scale));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Could not create 2D context');
+  // Smoothing on for the downscale itself -- this is a one-time cost per
+  // image load, and a nicer-quality shrink makes the interim preview more
+  // representative of the final result.
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(img, 0, 0, width, height);
+  return { imageData: ctx.getImageData(0, 0, width, height), scale };
+}

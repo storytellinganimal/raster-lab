@@ -10,6 +10,10 @@ interface TopBarProps {
   onFit: () => void;
   canvasEl: HTMLCanvasElement | null;
   hasImage: boolean;
+  /** Force an exact full-resolution render before reading pixels back out
+   * of the canvas -- guards export against ever capturing an interim
+   * low-res preview frame. */
+  onBeforeExport?: () => void;
 }
 
 export function TopBar({
@@ -21,12 +25,14 @@ export function TopBar({
   onFit,
   canvasEl,
   hasImage,
+  onBeforeExport,
 }: TopBarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const reset = useStore((s) => s.reset);
 
   function handleExport() {
     if (!canvasEl) return;
+    onBeforeExport?.();
     canvasEl.toBlob((blob) => {
       if (!blob) return;
       const url = URL.createObjectURL(blob);
