@@ -1,4 +1,5 @@
-import { cellAverageLuminance } from '../utils/luminance';
+import { sampleCell } from '../utils/luminance';
+import { rgbToHex } from '../utils/color';
 import type { AlgorithmContext, RasterAlgorithm, RasterCell } from './types';
 
 /**
@@ -18,13 +19,14 @@ export const thresholdAlgorithm: RasterAlgorithm = {
 
     for (let y = 0; y < height; y += cellSize) {
       for (let x = 0; x < width; x += cellSize) {
-        const lum = cellAverageLuminance(data, width, height, x, y, x + cellSize, y + cellSize);
-        const active = lum < cutoff;
+        const sample = sampleCell(data, width, height, x, y, x + cellSize, y + cellSize);
+        const active = sample.luminance < cutoff;
         cells.push({
           x: x + cellSize / 2,
           y: y + cellSize / 2,
           cellSize,
-          luminance: lum,
+          luminance: sample.luminance,
+          avgColor: rgbToHex(sample.r, sample.g, sample.b),
           size: 1,
           active,
         });

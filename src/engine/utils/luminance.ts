@@ -16,16 +16,54 @@ export function cellAverageLuminance(
   x1: number,
   y1: number,
 ): number {
-  let sum = 0;
+  return sampleCell(data, width, height, x0, y0, x1, y1).luminance;
+}
+
+export interface CellSample {
+  luminance: number;
+  r: number;
+  g: number;
+  b: number;
+}
+
+/**
+ * Average luminance *and* average RGB color of a rectangular cell, sampled
+ * in a single pass. Algorithms use `luminance` to decide where and how
+ * large a mark is; the renderer can optionally use `r`/`g`/`b` to paint
+ * that mark in the image's own sampled color instead of a flat palette
+ * color (see the "Grayscale" preprocessing toggle: turning it off feeds
+ * un-desaturated color into this sample, and the pipeline switches marks
+ * over to using it instead of the flat foreground swatch).
+ */
+export function sampleCell(
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+): CellSample {
+  let lumSum = 0;
+  let rSum = 0;
+  let gSum = 0;
+  let bSum = 0;
   let count = 0;
   const xEnd = Math.min(x1, width);
   const yEnd = Math.min(y1, height);
   for (let y = Math.max(y0, 0); y < yEnd; y++) {
     for (let x = Math.max(x0, 0); x < xEnd; x++) {
       const i = (y * width + x) * 4;
-      sum += luminance(data[i], data[i + 1], data[i + 2]);
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      lumSum += luminance(r, g, b);
+      rSum += r;
+      gSum += g;
+      bSum += b;
       count++;
     }
   }
-  return count === 0 ? 255 : sum / count;
+  if (count === 0) return { luminance: 255, r: 255, g: 255, b: 255 };
+  return { luminance: lumSum / count, r: rSum / count, g: gSum / count, b: bSum / count };
 }

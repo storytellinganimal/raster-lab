@@ -13,6 +13,9 @@ export interface RasterCell {
   y: number;
   cellSize: number; // width/height of the grid cell this mark occupies
   luminance: number; // 0..255 average luminance sampled for this cell
+  avgColor: string; // "#rrggbb" average color sampled for this cell, from
+  // the preprocessed image -- used instead of the flat foreground color
+  // when the Grayscale preprocessing toggle is off (see pipeline.ts).
   size: number; // 0..1, fraction of cellSize the mark should occupy
   active: boolean; // whether a mark should be drawn at all
 }

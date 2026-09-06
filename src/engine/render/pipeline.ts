@@ -34,8 +34,16 @@ export function runPipeline(
   const renderer = renderers[settings.renderer];
   const cells = algorithm.generate({ imageData: processed, settings });
 
+  // Grayscale on (the default): every mark uses the single flat foreground
+  // color, exactly as before -- a classic one-color halftone/threshold.
+  // Grayscale off: there's no reason to still collapse every mark down to
+  // one color, so each mark is instead painted with its own sampled
+  // average color, giving a genuine color raster instead of two flat
+  // tones that never change no matter what preprocessing does.
+  const useSourceColor = !settings.imageProcessing.grayscale;
   for (const cell of cells) {
-    renderer.draw({ ctx, cell, color: settings.palette.foreground });
+    const color = useSourceColor ? cell.avgColor : settings.palette.foreground;
+    renderer.draw({ ctx, cell, color });
   }
 }
 

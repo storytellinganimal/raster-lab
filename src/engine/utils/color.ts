@@ -20,3 +20,9 @@ export function hexToRgb(hex: string): RGB {
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
+
+/** Format 0-255 channels (fractional values are fine) as "#rrggbb". */
+export function rgbToHex(r: number, g: number, b: number): string {
+  const ch = (v: number) => clamp(Math.round(v), 0, 255).toString(16).padStart(2, '0');
+  return `#${ch(r)}${ch(g)}${ch(b)}`;
+}
