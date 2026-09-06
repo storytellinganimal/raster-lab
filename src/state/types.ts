@@ -1,0 +1,49 @@
+// Core type definitions for Raster Lab.
+// These interfaces are the contract between the four independent systems:
+// Image Processing -> Raster Algorithm -> Renderer -> Animation.
+// Keeping them in one file makes it easy to see the whole data model at a glance.
+
+/** Preprocessing applied to the source image before any raster algorithm runs. */
+export interface ImageProcessingSettings {
+  grayscale: boolean;
+  brightness: number; // -100 .. 100
+  contrast: number; // -100 .. 100
+  gamma: number; // 0.1 .. 4, 1 = no change
+  blur: number; // 0 .. 20 px (box blur radius)
+  invert: boolean;
+}
+
+/** Which raster algorithm decides *where* marks appear. */
+export type AlgorithmId = 'threshold' | 'halftone';
+
+export interface ThresholdSettings {
+  threshold: number; // 0..255
+}
+
+export interface HalftoneSettings {
+  minMarkSize: number; // 0..1, fraction of cell at lightest tone
+  maxMarkSize: number; // 0..1, fraction of cell at darkest tone
+  invert: boolean; // dark -> small instead of dark -> large
+}
+
+/** Which renderer decides *what* mark is drawn for an active cell. */
+export type RendererId = 'circle' | 'square' | 'pixel';
+
+export interface Palette {
+  foreground: string;
+  background: string;
+}
+
+export interface GridSettings {
+  cellSize: number;
+}
+
+export interface RasterLabState {
+  imageProcessing: ImageProcessingSettings;
+  algorithm: AlgorithmId;
+  threshold: ThresholdSettings;
+  halftone: HalftoneSettings;
+  renderer: RendererId;
+  palette: Palette;
+  grid: GridSettings;
+}
