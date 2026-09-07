@@ -193,6 +193,7 @@ export function CanvasView({
     settings.algorithm,
     settings.threshold,
     settings.halftone,
+    settings.posterize,
     settings.renderer,
     settings.palette,
     settings.grid,

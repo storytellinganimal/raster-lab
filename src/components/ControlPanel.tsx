@@ -24,6 +24,8 @@ export function ControlPanel() {
     setThreshold,
     halftone,
     setHalftone,
+    posterize,
+    setPosterize,
     renderer,
     setRenderer,
     palette,
@@ -136,6 +138,16 @@ export function ControlPanel() {
               />
             </label>
           </>
+        )}
+
+        {algorithm === 'posterize' && (
+          <Slider
+            label="Levels"
+            value={posterize.levels}
+            min={2}
+            max={8}
+            onChange={(v) => setPosterize({ levels: v })}
+          />
         )}
       </Section>
 

@@ -14,7 +14,15 @@ export interface ImageProcessingSettings {
 }
 
 /** Which raster algorithm decides *where* marks appear. */
-export type AlgorithmId = 'threshold' | 'halftone';
+export type AlgorithmId =
+  | 'threshold'
+  | 'halftone'
+  | 'bayer2'
+  | 'bayer4'
+  | 'bayer8'
+  | 'floydSteinberg'
+  | 'atkinson'
+  | 'posterize';
 
 export interface ThresholdSettings {
   threshold: number; // 0..255
@@ -24,6 +32,10 @@ export interface HalftoneSettings {
   minMarkSize: number; // 0..1, fraction of cell at lightest tone
   maxMarkSize: number; // 0..1, fraction of cell at darkest tone
   invert: boolean; // dark -> small instead of dark -> large
+}
+
+export interface PosterizeSettings {
+  levels: number; // 2..8 discrete tonal bands
 }
 
 /** Which renderer decides *what* mark is drawn for an active cell. */
@@ -43,6 +55,7 @@ export interface RasterLabState {
   algorithm: AlgorithmId;
   threshold: ThresholdSettings;
   halftone: HalftoneSettings;
+  posterize: PosterizeSettings;
   renderer: RendererId;
   palette: Palette;
   grid: GridSettings;

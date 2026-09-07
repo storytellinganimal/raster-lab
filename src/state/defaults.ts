@@ -21,6 +21,9 @@ export const defaultState: RasterLabState = {
     maxMarkSize: 0.95,
     invert: false,
   },
+  posterize: {
+    levels: 4,
+  },
   renderer: 'circle',
   palette: {
     foreground: '#111111',

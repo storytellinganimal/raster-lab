@@ -5,6 +5,7 @@ import type {
   HalftoneSettings,
   ImageProcessingSettings,
   Palette,
+  PosterizeSettings,
   RasterLabState,
   RendererId,
   ThresholdSettings,
@@ -16,6 +17,7 @@ interface StoreActions {
   setAlgorithm: (id: AlgorithmId) => void;
   setThreshold: (patch: Partial<ThresholdSettings>) => void;
   setHalftone: (patch: Partial<HalftoneSettings>) => void;
+  setPosterize: (patch: Partial<PosterizeSettings>) => void;
   setRenderer: (id: RendererId) => void;
   setPalette: (patch: Partial<Palette>) => void;
   setGrid: (patch: Partial<GridSettings>) => void;
@@ -33,6 +35,7 @@ export const useStore = create<Store>((set) => ({
   setAlgorithm: (id) => set({ algorithm: id }),
   setThreshold: (patch) => set((s) => ({ threshold: { ...s.threshold, ...patch } })),
   setHalftone: (patch) => set((s) => ({ halftone: { ...s.halftone, ...patch } })),
+  setPosterize: (patch) => set((s) => ({ posterize: { ...s.posterize, ...patch } })),
   setRenderer: (id) => set({ renderer: id }),
   setPalette: (patch) => set((s) => ({ palette: { ...s.palette, ...patch } })),
   setGrid: (patch) => set((s) => ({ grid: { ...s.grid, ...patch } })),
