@@ -283,6 +283,32 @@ body {
   border-radius: 2px;
 }
 
+.palette-label-row {
+  margin: 10px 0 6px;
+}
+
+.palette-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.palette-row {
+  display: grid;
+  grid-template-columns: 28px 1fr 22px;
+  align-items: center;
+  gap: 8px;
+}
+
+.palette-row .btn-icon {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1;
+}
+
 .hex-input {
   background: var(--bg-0);
   border: 1px solid var(--border);

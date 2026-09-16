@@ -1,35 +1,6 @@
 import { buildCellGrid } from './grid';
+import { bayerThreshold01 } from '../utils/orderedDither';
 import type { AlgorithmContext, RasterAlgorithm, RasterCell } from './types';
-
-/**
- * Builds an NxN Bayer (ordered-dithering) threshold matrix recursively.
- * The classic construction: given the matrix for size n, the matrix for
- * size 2n is four copies of it tiled 2x2, each copy offset by a different
- * multiple of 4 -- that offset is what makes the dither pattern at each
- * scale a refinement of the scale below it, rather than unrelated noise.
- *   M(2)  = [[0,2],
- *            [3,1]]
- *   M(2n)[y][x]     = 4*M(n)[y][x]
- *   M(2n)[y][x+n]   = 4*M(n)[y][x] + 2
- *   M(2n)[y+n][x]   = 4*M(n)[y][x] + 3
- *   M(2n)[y+n][x+n] = 4*M(n)[y][x] + 1
- */
-function buildBayerMatrix(n: number): number[][] {
-  if (n === 2) return [[0, 2], [3, 1]];
-  const half = buildBayerMatrix(n / 2);
-  const h = n / 2;
-  const m: number[][] = Array.from({ length: n }, () => new Array(n).fill(0));
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < h; x++) {
-      const v = half[y][x];
-      m[y][x] = 4 * v;
-      m[y][x + h] = 4 * v + 2;
-      m[y + h][x] = 4 * v + 3;
-      m[y + h][x + h] = 4 * v + 1;
-    }
-  }
-  return m;
-}
 
 /**
  * Ordered (Bayer) dithering: instead of one global cutoff (Threshold) or a
@@ -40,10 +11,9 @@ function buildBayerMatrix(n: number): number[][] {
  * same every time for the same image and matrix size.
  */
 function createBayerAlgorithm(id: string, label: string, n: number): RasterAlgorithm {
-  const matrix = buildBayerMatrix(n);
   // Pre-normalize each matrix cell to a 0..255 threshold once, up front,
   // rather than recomputing it for every image cell.
-  const thresholds: number[][] = matrix.map((row) => row.map((v) => ((v + 0.5) / (n * n)) * 255));
+  const thresholds: number[][] = bayerThreshold01(n).map((row) => row.map((v) => v * 255));
 
   return {
     id,

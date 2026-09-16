@@ -26,8 +26,8 @@ export const defaultState: RasterLabState = {
   },
   renderer: 'circle',
   palette: {
-    foreground: '#111111',
     background: '#ffffff',
+    colors: ['#111111'],
   },
   grid: {
     cellSize: 10,

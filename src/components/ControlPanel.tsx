@@ -31,6 +31,9 @@ export function ControlPanel() {
     palette,
     setPalette,
     swapPalette,
+    addPaletteColor,
+    removePaletteColor,
+    setPaletteColor,
     grid,
     setGrid,
   } = useStore();
@@ -177,20 +180,6 @@ export function ControlPanel() {
 
       <Section title="Color">
         <label className="control-row">
-          <span className="control-label">Foreground</span>
-          <input
-            type="color"
-            value={palette.foreground}
-            onChange={(e) => setPalette({ foreground: e.target.value })}
-          />
-          <input
-            type="text"
-            className="hex-input"
-            value={palette.foreground}
-            onChange={(e) => setPalette({ foreground: e.target.value })}
-          />
-        </label>
-        <label className="control-row">
           <span className="control-label">Background</span>
           <input
             type="color"
@@ -204,8 +193,42 @@ export function ControlPanel() {
             onChange={(e) => setPalette({ background: e.target.value })}
           />
         </label>
+
+        <div className="palette-label-row">
+          <span className="control-label">Mark palette (lightest → darkest)</span>
+        </div>
+        <div className="palette-list">
+          {palette.colors.map((color, i) => (
+            <div className="palette-row" key={i}>
+              <input
+                type="color"
+                value={color}
+                onChange={(e) => setPaletteColor(i, e.target.value)}
+                aria-label={`Palette color ${i + 1}`}
+              />
+              <input
+                type="text"
+                className="hex-input"
+                value={color}
+                onChange={(e) => setPaletteColor(i, e.target.value)}
+                aria-label={`Palette color ${i + 1} hex value`}
+              />
+              <button
+                className="btn btn-icon"
+                onClick={() => removePaletteColor(i)}
+                disabled={palette.colors.length <= 1}
+                aria-label={`Remove palette color ${i + 1}`}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+        <button className="btn btn-secondary" onClick={addPaletteColor}>
+          + Add Color
+        </button>
         <button className="btn btn-secondary" onClick={swapPalette}>
-          Swap FG / BG
+          {palette.colors.length > 1 ? 'Reverse Palette' : 'Swap FG / BG'}
         </button>
       </Section>
     </div>

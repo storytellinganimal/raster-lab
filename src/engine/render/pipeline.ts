@@ -2,6 +2,42 @@ import type { RasterLabState } from '../../state/types';
 import { preprocess } from '../image/preprocess';
 import { algorithms } from '../algorithms';
 import { renderers } from '../renderers';
+import { hexLuminance } from '../utils/color';
+import { bayerThreshold01 } from '../utils/orderedDither';
+import type { RasterCell } from '../algorithms/types';
+
+// The dither pattern used to blend between two neighboring palette colors
+// (see paletteColorForCell below). 4x4 is fine enough that the transition
+// between colors doesn't read as a chunky checkerboard, coarse enough to
+// stay a deliberate pattern rather than a smooth gradient.
+const PALETTE_DITHER = bayerThreshold01(4);
+
+/**
+ * Picks the mark color for one cell out of an ordered lightest-to-darkest
+ * palette. With a single color this always returns it (the classic flat
+ * look). With more, the cell's tone is mapped to a position along the
+ * list; a cell that lands between two colors doesn't get a flat
+ * interpolated blend -- it's ordered-dithered between its two neighbors
+ * (same technique as Bayer dithering, just choosing a color instead of
+ * on/off), which is what produces a patterned, halftone-like transition
+ * between palette colors instead of a smooth gradient.
+ */
+function paletteColorForCell(cell: RasterCell, sortedColors: string[]): string {
+  if (sortedColors.length <= 1) return sortedColors[0] ?? '#000000';
+
+  const tone = 1 - cell.luminance / 255; // 0 = lightest, 1 = darkest
+  const pos = Math.min(1, Math.max(0, tone)) * (sortedColors.length - 1);
+  const lower = Math.floor(pos);
+  const upper = Math.min(sortedColors.length - 1, lower + 1);
+  if (lower === upper) return sortedColors[lower];
+
+  const frac = pos - lower;
+  const col = Math.round(cell.x / cell.cellSize - 0.5);
+  const row = Math.round(cell.y / cell.cellSize - 0.5);
+  const n = PALETTE_DITHER.length;
+  const cutoff = PALETTE_DITHER[((row % n) + n) % n][((col % n) + n) % n];
+  return frac > cutoff ? sortedColors[upper] : sortedColors[lower];
+}
 
 /**
  * The full pipeline, end to end:
@@ -34,15 +70,21 @@ export function runPipeline(
   const renderer = renderers[settings.renderer];
   const cells = algorithm.generate({ imageData: processed, settings });
 
-  // Grayscale on (the default): every mark uses the single flat foreground
-  // color, exactly as before -- a classic one-color halftone/threshold.
+  // Grayscale on (the default): every mark's color comes from the mark
+  // palette, mapped across its tonal range -- a flat single color when
+  // there's only one (the classic one-color halftone/threshold look,
+  // unchanged), or a multi-color dithered gradient when there's more.
   // Grayscale off: there's no reason to still collapse every mark down to
-  // one color, so each mark is instead painted with its own sampled
+  // a palette color, so each mark is instead painted with its own sampled
   // average color, giving a genuine color raster instead of two flat
   // tones that never change no matter what preprocessing does.
   const useSourceColor = !settings.imageProcessing.grayscale;
+  // Sorted once per render, not per cell -- and sorted by each color's own
+  // luminance so "lightest to darkest" holds regardless of the order
+  // colors were added in.
+  const sortedColors = [...settings.palette.colors].sort((a, b) => hexLuminance(b) - hexLuminance(a));
   for (const cell of cells) {
-    const color = useSourceColor ? cell.avgColor : settings.palette.foreground;
+    const color = useSourceColor ? cell.avgColor : paletteColorForCell(cell, sortedColors);
     renderer.draw({ ctx, cell, color });
   }
 }

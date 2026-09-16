@@ -42,8 +42,19 @@ export interface PosterizeSettings {
 export type RendererId = 'circle' | 'square' | 'pixel';
 
 export interface Palette {
-  foreground: string;
+  /** Solid canvas backdrop -- independent of the mark palette below. */
   background: string;
+  /**
+   * The mark palette. With one entry this is the classic flat single
+   * foreground color. With more than one, cell tone is mapped across the
+   * list from lightest to darkest (colors are sorted by their own
+   * luminance wherever they're used, so the order they were added in
+   * doesn't matter), and cells whose tone falls between two neighboring
+   * palette colors are ordered-dithered between them -- a patterned color
+   * blend rather than a smooth gradient, matching the rest of the app's
+   * raster aesthetic. Always has at least one entry.
+   */
+  colors: string[];
 }
 
 export interface GridSettings {

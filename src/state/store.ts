@@ -11,6 +11,7 @@ import type {
   ThresholdSettings,
 } from './types';
 import { defaultState } from './defaults';
+import { blendHex } from '../engine/utils/color';
 
 interface StoreActions {
   setImageProcessing: (patch: Partial<ImageProcessingSettings>) => void;
@@ -22,6 +23,14 @@ interface StoreActions {
   setPalette: (patch: Partial<Palette>) => void;
   setGrid: (patch: Partial<GridSettings>) => void;
   swapPalette: () => void;
+  /** Appends one color to the mark palette, defaulted to roughly halfway
+   * between the current lightest and darkest entries so it's immediately
+   * useful before the user picks their own hex. */
+  addPaletteColor: () => void;
+  /** Removes one mark color by index. A no-op if only one remains -- the
+   * palette can never go empty. */
+  removePaletteColor: (index: number) => void;
+  setPaletteColor: (index: number, hex: string) => void;
   reset: () => void;
   loadState: (state: RasterLabState) => void;
 }
@@ -40,8 +49,35 @@ export const useStore = create<Store>((set) => ({
   setPalette: (patch) => set((s) => ({ palette: { ...s.palette, ...patch } })),
   setGrid: (patch) => set((s) => ({ grid: { ...s.grid, ...patch } })),
   swapPalette: () =>
+    set((s) => {
+      const { colors, background } = s.palette;
+      if (colors.length <= 1) {
+        // Classic two-color swap: the one mark color and the background
+        // trade places, exactly like the old single-foreground behavior.
+        return { palette: { background: colors[0] ?? background, colors: [background] } };
+      }
+      // No single "foreground" to swap once there's a real palette --
+      // reversing the lightest-to-darkest order is the natural analog,
+      // and inverts which end of the tonal range each color lands on.
+      return { palette: { ...s.palette, colors: [...colors].reverse() } };
+    }),
+  addPaletteColor: () =>
+    set((s) => {
+      const { colors, background } = s.palette;
+      const next =
+        colors.length >= 2
+          ? blendHex(colors[0], colors[colors.length - 1], 0.5)
+          : blendHex(colors[0] ?? '#000000', background, 0.5);
+      return { palette: { ...s.palette, colors: [...colors, next] } };
+    }),
+  removePaletteColor: (index) =>
+    set((s) => {
+      if (s.palette.colors.length <= 1) return {};
+      return { palette: { ...s.palette, colors: s.palette.colors.filter((_, i) => i !== index) } };
+    }),
+  setPaletteColor: (index, hex) =>
     set((s) => ({
-      palette: { foreground: s.palette.background, background: s.palette.foreground },
+      palette: { ...s.palette, colors: s.palette.colors.map((c, i) => (i === index ? hex : c)) },
     })),
   reset: () => set({ ...defaultState }),
   loadState: (state) => set({ ...state }),
