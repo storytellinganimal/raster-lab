@@ -67,7 +67,12 @@ export function runPipeline(
   ctx.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
 
   const algorithm = algorithms[settings.algorithm];
-  const renderer = renderers[settings.renderer];
+  // The globally-selected renderer -- used by every cell from every
+  // algorithm except Hybrid Raster, where a cell can name its own renderer
+  // instead (see RasterCell.rendererId and engine/algorithms/hybrid.ts).
+  // This is the one place that distinction is resolved; renderers
+  // themselves never know or care which one drew a given cell.
+  const globalRenderer = renderers[settings.renderer];
   const cells = algorithm.generate({ imageData: processed, settings });
 
   // Grayscale on (the default): every mark's color comes from the mark
@@ -84,7 +89,9 @@ export function runPipeline(
   // colors were added in.
   const sortedColors = [...settings.palette.colors].sort((a, b) => hexLuminance(b) - hexLuminance(a));
   for (const cell of cells) {
+    if (!cell.active) continue;
     const color = useSourceColor ? cell.avgColor : paletteColorForCell(cell, sortedColors);
+    const renderer = cell.rendererId ? renderers[cell.rendererId] : globalRenderer;
     renderer.draw({ ctx, cell, color });
   }
 }

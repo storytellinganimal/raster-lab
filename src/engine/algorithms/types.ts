@@ -1,4 +1,4 @@
-import type { RasterLabState } from '../../state/types';
+import type { RasterLabState, RendererId } from '../../state/types';
 
 /**
  * A RasterCell is the conceptual unit the algorithm layer hands to the
@@ -18,6 +18,15 @@ export interface RasterCell {
   // when the Grayscale preprocessing toggle is off (see pipeline.ts).
   size: number; // 0..1, fraction of cellSize the mark should occupy
   active: boolean; // whether a mark should be drawn at all
+  /**
+   * Overrides which renderer draws this specific cell, instead of the
+   * single globally-selected one in settings.renderer. Every existing
+   * algorithm leaves this undefined -- one algorithm, one renderer, exactly
+   * as before. Hybrid Raster is the only algorithm that sets it, because
+   * different cells in the same hybrid render legitimately need different
+   * mark shapes (see engine/algorithms/hybrid.ts and pipeline.ts).
+   */
+  rendererId?: RendererId;
 }
 
 /** Everything an algorithm needs to turn a preprocessed image into cells. */

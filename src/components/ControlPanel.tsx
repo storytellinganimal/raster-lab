@@ -3,7 +3,7 @@ import { useStore } from '../state/store';
 import { Slider } from './Slider';
 import { algorithms } from '../engine/algorithms';
 import { renderers } from '../engine/renderers';
-import type { AlgorithmId, RendererId } from '../state/types';
+import type { AlgorithmId, MarkType, RendererId, TonalRegionId } from '../state/types';
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -13,6 +13,13 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
     </section>
   );
 }
+
+const MARK_TYPE_OPTIONS: { value: MarkType; label: string }[] = [
+  { value: 'none', label: 'None' },
+  { value: 'circle', label: 'Circle' },
+  { value: 'square', label: 'Square' },
+  { value: 'pixel', label: 'Solid Pixel' },
+];
 
 export function ControlPanel() {
   const {
@@ -26,6 +33,9 @@ export function ControlPanel() {
     setHalftone,
     posterize,
     setPosterize,
+    hybrid,
+    setHybridBoundary,
+    setHybridRegion,
     renderer,
     setRenderer,
     palette,
@@ -154,6 +164,82 @@ export function ControlPanel() {
         )}
       </Section>
 
+      {algorithm === 'hybrid' && (
+        <Section title="Hybrid Regions">
+          <Slider
+            label="Shadows ends at"
+            value={hybrid.boundaries.shadowsMax}
+            min={1}
+            max={254}
+            onChange={(v) => setHybridBoundary('shadowsMax', v)}
+          />
+          <Slider
+            label="Dark midtones ends at"
+            value={hybrid.boundaries.darkMidtonesMax}
+            min={1}
+            max={254}
+            onChange={(v) => setHybridBoundary('darkMidtonesMax', v)}
+          />
+          <Slider
+            label="Light midtones ends at"
+            value={hybrid.boundaries.lightMidtonesMax}
+            min={1}
+            max={254}
+            onChange={(v) => setHybridBoundary('lightMidtonesMax', v)}
+          />
+
+          {(
+            [
+              { id: 'highlights', label: 'HIGHLIGHTS', range: `${hybrid.boundaries.lightMidtonesMax}–255` },
+              {
+                id: 'lightMidtones',
+                label: 'LIGHT MIDTONES',
+                range: `${hybrid.boundaries.darkMidtonesMax}–${hybrid.boundaries.lightMidtonesMax}`,
+              },
+              {
+                id: 'darkMidtones',
+                label: 'DARK MIDTONES',
+                range: `${hybrid.boundaries.shadowsMax}–${hybrid.boundaries.darkMidtonesMax}`,
+              },
+              { id: 'shadows', label: 'SHADOWS', range: `0–${hybrid.boundaries.shadowsMax}` },
+            ] as { id: TonalRegionId; label: string; range: string }[]
+          ).map(({ id, label, range }) => {
+            const region = hybrid.regions[id];
+            return (
+              <div className="hybrid-region" key={id}>
+                <div className="hybrid-region-header">
+                  <span className="hybrid-region-label">{label}</span>
+                  <span className="hybrid-region-range">{range}</span>
+                </div>
+                <label className="control-row">
+                  <span className="control-label">Mark</span>
+                  <select
+                    value={region.markType}
+                    onChange={(e) => setHybridRegion(id, { markType: e.target.value as MarkType })}
+                  >
+                    {MARK_TYPE_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {region.markType !== 'none' && (
+                  <Slider
+                    label="Mark size"
+                    value={region.markSize}
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    onChange={(v) => setHybridRegion(id, { markSize: v })}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </Section>
+      )}
+
       <Section title="Grid">
         <Slider
           label="Cell size"
@@ -165,18 +251,20 @@ export function ControlPanel() {
         />
       </Section>
 
-      <Section title="Renderer">
-        <label className="control-row">
-          <span className="control-label">Mark shape</span>
-          <select value={renderer} onChange={(e) => setRenderer(e.target.value as RendererId)}>
-            {Object.values(renderers).map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </Section>
+      {algorithm !== 'hybrid' && (
+        <Section title="Renderer">
+          <label className="control-row">
+            <span className="control-label">Mark shape</span>
+            <select value={renderer} onChange={(e) => setRenderer(e.target.value as RendererId)}>
+              {Object.values(renderers).map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </Section>
+      )}
 
       <Section title="Color">
         <label className="control-row">

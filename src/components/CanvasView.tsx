@@ -194,6 +194,7 @@ export function CanvasView({
     settings.threshold,
     settings.halftone,
     settings.posterize,
+    settings.hybrid,
     settings.renderer,
     settings.palette,
     settings.grid,

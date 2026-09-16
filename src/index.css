@@ -230,6 +230,38 @@ body {
   margin-bottom: 8px;
 }
 
+.hybrid-region {
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+
+.hybrid-region:first-of-type {
+  border-top: none;
+  margin-top: 10px;
+  padding-top: 0;
+}
+
+.hybrid-region-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.hybrid-region-label {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  color: var(--text-0);
+}
+
+.hybrid-region-range {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-2);
+}
+
 .control-row-checkbox {
   grid-template-columns: 1fr auto;
 }

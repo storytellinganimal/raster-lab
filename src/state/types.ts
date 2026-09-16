@@ -22,7 +22,8 @@ export type AlgorithmId =
   | 'bayer8'
   | 'floydSteinberg'
   | 'atkinson'
-  | 'posterize';
+  | 'posterize'
+  | 'hybrid';
 
 export interface ThresholdSettings {
   threshold: number; // 0..255
@@ -40,6 +41,48 @@ export interface PosterizeSettings {
 
 /** Which renderer decides *what* mark is drawn for an active cell. */
 export type RendererId = 'circle' | 'square' | 'pixel';
+
+/**
+ * A tonal region's mark treatment, in the vocabulary Hybrid Raster's UI
+ * exposes. 'none' has no renderer at all -- it means "this tonal region is
+ * negative space" -- everything else maps directly onto a RendererId (see
+ * engine/algorithms/hybrid.ts).
+ */
+export type MarkType = 'none' | 'circle' | 'square' | 'pixel';
+
+export interface TonalRegionConfig {
+  markType: MarkType;
+  markSize: number; // 0..1, same normalized size semantics as every other algorithm
+}
+
+/**
+ * Fixed set of tonal regions for Phase 3's Hybrid Raster. Named (not a
+ * positional array) so that region identity can never be confused with
+ * array order, and so a future per-region property (color, density, grid
+ * scale, jitter, rotation, pattern, animation...) is just one more field
+ * on TonalRegionConfig, applied uniformly to all four -- no restructuring.
+ */
+export type TonalRegionId = 'shadows' | 'darkMidtones' | 'lightMidtones' | 'highlights';
+
+export interface HybridSettings {
+  /**
+   * Three ascending cutpoints (0..255) splitting the luminance range into
+   * four tonal regions:
+   *   shadows       : [0, shadowsMax)
+   *   dark midtones : [shadowsMax, darkMidtonesMax)
+   *   light midtones: [darkMidtonesMax, lightMidtonesMax)
+   *   highlights    : [lightMidtonesMax, 255]
+   * Always shadowsMax < darkMidtonesMax < lightMidtonesMax -- enforced by
+   * the store's setHybridBoundary action, not just by convention, so a
+   * dragged boundary can never invert or collapse a region.
+   */
+  boundaries: {
+    shadowsMax: number;
+    darkMidtonesMax: number;
+    lightMidtonesMax: number;
+  };
+  regions: Record<TonalRegionId, TonalRegionConfig>;
+}
 
 export interface Palette {
   /** Solid canvas backdrop -- independent of the mark palette below. */
@@ -67,6 +110,7 @@ export interface RasterLabState {
   threshold: ThresholdSettings;
   halftone: HalftoneSettings;
   posterize: PosterizeSettings;
+  hybrid: HybridSettings;
   renderer: RendererId;
   palette: Palette;
   grid: GridSettings;

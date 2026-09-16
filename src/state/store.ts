@@ -9,9 +9,17 @@ import type {
   RasterLabState,
   RendererId,
   ThresholdSettings,
+  TonalRegionConfig,
+  TonalRegionId,
 } from './types';
 import { defaultState } from './defaults';
 import { blendHex } from '../engine/utils/color';
+
+// Ascending order -- used to find each boundary's neighbors when clamping
+// an edit, so shadowsMax < darkMidtonesMax < lightMidtonesMax can never be
+// violated no matter which one is dragged or by how much.
+const BOUNDARY_KEYS = ['shadowsMax', 'darkMidtonesMax', 'lightMidtonesMax'] as const;
+type BoundaryKey = (typeof BOUNDARY_KEYS)[number];
 
 interface StoreActions {
   setImageProcessing: (patch: Partial<ImageProcessingSettings>) => void;
@@ -19,6 +27,12 @@ interface StoreActions {
   setThreshold: (patch: Partial<ThresholdSettings>) => void;
   setHalftone: (patch: Partial<HalftoneSettings>) => void;
   setPosterize: (patch: Partial<PosterizeSettings>) => void;
+  /** Moves one boundary, clamped so it stays strictly between its
+   * neighbors (a 1-unit gap minimum) -- boundaries can never cross or
+   * collapse a region to zero width, regardless of the raw value passed
+   * in. */
+  setHybridBoundary: (key: BoundaryKey, value: number) => void;
+  setHybridRegion: (id: TonalRegionId, patch: Partial<TonalRegionConfig>) => void;
   setRenderer: (id: RendererId) => void;
   setPalette: (patch: Partial<Palette>) => void;
   setGrid: (patch: Partial<GridSettings>) => void;
@@ -45,6 +59,21 @@ export const useStore = create<Store>((set) => ({
   setThreshold: (patch) => set((s) => ({ threshold: { ...s.threshold, ...patch } })),
   setHalftone: (patch) => set((s) => ({ halftone: { ...s.halftone, ...patch } })),
   setPosterize: (patch) => set((s) => ({ posterize: { ...s.posterize, ...patch } })),
+  setHybridBoundary: (key, value) =>
+    set((s) => {
+      const boundaries = { ...s.hybrid.boundaries };
+      const i = BOUNDARY_KEYS.indexOf(key);
+      const prevKey = BOUNDARY_KEYS[i - 1];
+      const nextKey = BOUNDARY_KEYS[i + 1];
+      const min = prevKey ? boundaries[prevKey] + 1 : 1;
+      const max = nextKey ? boundaries[nextKey] - 1 : 254;
+      boundaries[key] = Math.min(max, Math.max(min, Math.round(value)));
+      return { hybrid: { ...s.hybrid, boundaries } };
+    }),
+  setHybridRegion: (id, patch) =>
+    set((s) => ({
+      hybrid: { ...s.hybrid, regions: { ...s.hybrid.regions, [id]: { ...s.hybrid.regions[id], ...patch } } },
+    })),
   setRenderer: (id) => set({ renderer: id }),
   setPalette: (patch) => set((s) => ({ palette: { ...s.palette, ...patch } })),
   setGrid: (patch) => set((s) => ({ grid: { ...s.grid, ...patch } })),
